@@ -1,4 +1,4 @@
-function Invoke-Batch {
+function Invoke-TraditionalBatch {
     [CmdletBinding()]
 
     Param (
@@ -73,14 +73,17 @@ function Invoke-Batch {
 
             $drainingServers = $hp.Servers | Where-Object {$_.AllowNewConnections -eq $false}
 
-            if ($drainingServers -and ($drainingServers.CurrentUserCount | Measure-Object -Sum).Sum -eq 0) {
-                $hp.Servers | Where-Object { $_.AllowNewConnections -eq $false } | ForEach-Object {
-                    $svr = $_
-                    $svr.version++
-                    $svr.AllowNewConnections = $true
-                    $NewDrainFlag = $true
+            if (($day % $MaxSessionLogonDays) -eq 0) {
+                if ($drainingServers -and ($drainingServers.CurrentUserCount | Measure-Object -Sum).Sum -eq 0) {
+                    $hp.Servers | Where-Object { $_.AllowNewConnections -eq $false } | ForEach-Object {
+                        $svr = $_
+                        $svr.version++
+                        $svr.AllowNewConnections = $true
+                        $NewDrainFlag = $true
+                    }
                 }
             }
+
 
             if ($NewDrainFlag -eq $true) {
                 $hp.Servers | Where-Object {$_.Version -eq 1} |Sort-Object -Property CurrentUserCount | Select-Object -First $serversToDrain | ForEach-Object {
@@ -100,4 +103,4 @@ function Invoke-Batch {
 
     } #Process
     END {} #End
-}  #function Invoke-Batch
+}  #function Invoke-TraditionalBatch
