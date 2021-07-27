@@ -12,33 +12,66 @@ function Simulate-Logoff {
             ValuefromPipelineByPropertyName = $true,
             ValuefromPipeline = $true
         )]
-        [int]$UsersPerServer = 16
+        [int]$UsersPerServer = 16,
+
+        [Parameter(
+            ValuefromPipelineByPropertyName = $true,
+            ValuefromPipeline = $true
+        )]
+        [double]$MaxConcurrancy = 0.7,
+
+        [Parameter(
+            ValuefromPipelineByPropertyName = $true,
+            ValuefromPipeline = $true
+        )]
+        [double]$MinConcurrancy = 0.4,
+
+        [Parameter(
+            ValuefromPipelineByPropertyName = $true,
+            ValuefromPipeline = $true
+        )]
+        [double]$StartVersion = 1,
+
+        [Parameter(
+            ValuefromPipelineByPropertyName = $true,
+            ValuefromPipeline = $true
+        )]
+        [Int]$MaxSessionLogonDays = 5
     )
 
     BEGIN {
         Set-StrictMode -Version Latest
     } # Begin
     PROCESS {
-        $totalUsers = $NumberOfServers * $UsersPerServer
+
+        #Max users
+        $totalMaxUsers = $NumberOfServers * $UsersPerServer * $MaxConcurrancy
+
+        $totalMinUsers = $NumberOfServers * $UsersPerServer * $MinConcurrancy
+
+        #assuming breadth mode to start with
+        #Occupied servers at lowest ebb
+        $ServerFill = $totalMinUsers / $NumberOfServers
 
         $serverBuckets = @()
 
         foreach ($server in 1..$NumberOfServers) {
 
             $add = [PSCustomObject]@{
-                ServerName     = $server
-                UsersLoggedOff = 0
+                ServerName = $server
+                Users      = [System.Collections.ArrayList]
+                Version    = $StartVersion
+                AllowLogon = $true
             }
 
             $serverBuckets += $add
-
         }
 
         [System.Collections.ArrayList]$userArray = 1..$totalUsers
 
         $serverIncrement = 0
 
-        while ($userArray.count -gt 0) {
+        while ($userArray.count -gt ($totalUsers * $MinConcurrancy)) {
             $randomUser = $userArray | Get-Random
 
             $bucket = [math]::Ceiling($randomUser / $UsersPerServer)
