@@ -2,7 +2,13 @@
 . .\Public\Invoke-Batch.ps1
 . .\Public\Invoke-TraditionalBatch.ps1
 
-$total = foreach ($num in 1..10 | ForEach-Object { $_ * 10 }) {
+#| ForEach-Object { $_ * 10 }
+
+$total = 1..10 | ForEach-Object { $_ * 2 } | ForEach-Object -Parallel {
+    . .\Public\Invoke-Greedy.ps1
+    . .\Public\Invoke-Batch.ps1
+    . .\Public\Invoke-TraditionalBatch.ps1
+    $num = $_
     Write-Host "Starting number $num"
     $avg = @()
 
@@ -10,10 +16,10 @@ $total = foreach ($num in 1..10 | ForEach-Object { $_ * 10 }) {
         Write-Host "Starting run $i"
 
         $MaxSessionLogonDays = 3
-        $MaxConcurrancy = 0.7
-        $MinConcurrancy = 0.2
-        $UsersPerServer = 12
-        $NumberOfServers = $num
+        $MaxConcurrancy = 0.8
+        $MinConcurrancy = 0.3
+        $UsersPerServer = $num
+        $NumberOfServers = 10
 
         $scalingparam = @{
             MaxSessionLogonDays = $MaxSessionLogonDays
@@ -47,4 +53,4 @@ $total = foreach ($num in 1..10 | ForEach-Object { $_ * 10 }) {
 
     $j
 }
-$total
+$total | Export-Csv -Path c:\jimm\run.csv
